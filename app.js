@@ -1,0 +1,79 @@
+const express = require('express');
+const app = express();
+const userModel = require('./models/user');
+const postModel = require('./models/post');
+const bcrypt = require('bcrypt');
+const path = require('path');
+const jwt = require('jsonwebtoken');
+const cookieParser = require('cookie-parser');
+
+app.set('view engine', 'ejs');
+app.use(express.json());
+app.use(express.urlencoded({extended: true}));
+app.use(cookieParser());
+
+app.get('/', (req, res) => {
+    res.render('index');
+});
+
+app.get('/login', (req, res) => {
+    res.render('login');
+});
+
+app.get('/profile', isLoggedIn, (req, res) => { //protected route using isLoggedIn middleware
+    console.log(req.user);
+    res.send('Profile page');
+});
+
+app.get('/logout', (req, res) => {
+    res.cookie('token','')
+    res.redirect('/login');
+});
+
+app.post('/login',async (req,res) => {
+    let {username, password} = req.body;
+
+    let user = await userModel.findOne({username});
+    if(!user) return res.status(500).send('Invalid credentials');
+
+    bcrypt.compare(password, user.password, (err, result) => {
+        if(result){
+            let token = jwt.sign({username, userId: user._id},"secret");
+            res.cookie('token', token).status(200).send('Login successful');
+        }
+        else res.status(500).send('Invalid credentials');
+    })
+})
+
+app.post('/register',async (req,res) => {
+    let {username, name, email, age, password} = req.body;
+
+    let user = await userModel.findOne({username});
+    if(user) return res.status(500).send('Username already exists');
+
+    bcrypt.genSalt(10, (err, salt) => {
+        bcrypt.hash(password, salt, async (err, hash) => {
+            let user = await userModel.create({
+                username,
+                name,
+                email,
+                age,
+                password: hash
+            });
+            let token = jwt.sign({username, userId: user._id},"secret");
+            res.cookie('token', token).send('User registered successfully');
+        })
+    })
+})
+
+function isLoggedIn(req,res,next){
+    let token = req.cookies.token;
+    if(!token) return res.send('Unauthorized');
+    else{
+        let data = jwt.verify(token, 'secret');
+        req.user = data;
+        next();
+    }
+}
+
+app.listen(3000);
