@@ -20,9 +20,9 @@ app.get('/login', (req, res) => {
     res.render('login');
 });
 
-app.get('/profile', isLoggedIn, (req, res) => { //protected route using isLoggedIn middleware
-    console.log(req.user);
-    res.send('Profile page');
+app.get('/profile', isLoggedIn, async (req, res) => { //protected route using isLoggedIn middleware
+    let user = await userModel.findOne({username: req.user.username});
+    res.render('profile', {user});
 });
 
 app.get('/logout', (req, res) => {
@@ -39,7 +39,7 @@ app.post('/login',async (req,res) => {
     bcrypt.compare(password, user.password, (err, result) => {
         if(result){
             let token = jwt.sign({username, userId: user._id},"secret");
-            res.cookie('token', token).status(200).send('Login successful');
+            res.cookie('token', token).redirect('/profile');
         }
         else res.status(500).send('Invalid credentials');
     })
