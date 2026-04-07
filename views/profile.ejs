@@ -24,13 +24,16 @@
                     <% user.posts.reverse().forEach(post => { %>
                         <div class="post p-4 rounded-lg border-2 border-zinc-800 flex flex-col h-full min-h-[150px]">
                             <h4 class="text-zinc-400">@<%= user.username %></h4>
-                            <p class="px-[3px] py-2 font-[500] flex-grow"><%= post.content %></p>
+                            <p class="px-[3px] pt-2 font-[500] flex-grow"><%= post.content %></p>
+                            <small class="my-2 ml-[4px]"><%= post.likes.length %> likes</small>
                             <div class="btns flex justify-between items-center">
                                 <div class="flex gap-3">
-                                    <a href="" class="text-blue-500 text-sm hover:text-blue-700">Like</a>
-                                    <a href="" class="text-zinc-500 text-sm hover:text-zinc-700">Edit</a>
+                                    <a href="/like/<%= post._id %>" class="text-blue-500 text-sm hover:text-blue-700">
+                                        <%= post.likes.indexOf(user._id) === -1 ? "Like" : "Unlike" %>
+                                    </a>
+                                    <a href="/edit/<%= post._id %>" class="text-zinc-500 text-sm hover:text-zinc-700">Edit</a>
                                 </div>
-                                <a href="" class="text-red-500 text-sm hover:text-red-700">Delete</a>
+                                <a href="/delete/<%= post._id %>" class="text-red-500 text-sm hover:text-red-700">Delete</a>
                             </div>
                         </div>
                     <% }) %>

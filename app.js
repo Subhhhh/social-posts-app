@@ -20,6 +20,30 @@ app.get('/login', (req, res) => {
     res.render('login');
 });
 
+app.get('/like/:id', isLoggedIn, async (req, res) => {
+    let post = await postModel.findOne({_id: req.params.id}).populate('user');
+
+    if(post.likes.indexOf(req.user.userId)===-1) post.likes.push(req.user.userId);
+    else post.likes.splice(post.likes.indexOf(req.user.userId), 1);
+    await post.save();
+    res.redirect('/profile');
+});
+
+app.get('/edit/:id', isLoggedIn, async (req, res) => {
+    let post = await postModel.findOne({_id: req.params.id}).populate('user');
+    res.render('edit', {post});
+});
+
+app.post('/edit/:id', isLoggedIn, async (req, res) => {
+    let post = await postModel.findOneAndUpdate({_id: req.params.id}, {content: req.body.content})
+    res.redirect('/profile');
+});
+
+app.get('/delete/:id', isLoggedIn, async (req, res) => {
+    await postModel.findOneAndDelete({_id: req.params.id});
+    res.redirect('/profile');
+});
+
 app.get('/profile', isLoggedIn, async (req, res) => { //protected route using isLoggedIn middleware
     let user = await userModel.findOne({username: req.user.username}).populate('posts');
     res.render('profile', {user});
@@ -61,7 +85,7 @@ app.post('/register',async (req,res) => {
                 password: hash
             });
             let token = jwt.sign({username, userId: user._id},"secret");
-            res.cookie('token', token).send('User registered successfully');
+            res.cookie('token', token).redirect('/profile');
         })
     })
 })
