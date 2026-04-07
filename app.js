@@ -21,7 +21,7 @@ app.get('/login', (req, res) => {
 });
 
 app.get('/profile', isLoggedIn, async (req, res) => { //protected route using isLoggedIn middleware
-    let user = await userModel.findOne({username: req.user.username});
+    let user = await userModel.findOne({username: req.user.username}).populate('posts');
     res.render('profile', {user});
 });
 
@@ -64,6 +64,18 @@ app.post('/register',async (req,res) => {
             res.cookie('token', token).send('User registered successfully');
         })
     })
+})
+
+app.post('/post', isLoggedIn, async (req, res) => {
+    let user = await userModel.findOne({username: req.user.username});
+    let {content} = req.body;
+    let post = await postModel.create({
+        user: user._id,
+        content
+    })
+    user.posts.push(post._id);
+    await user.save();
+    res.redirect('/profile');
 })
 
 function isLoggedIn(req,res,next){
